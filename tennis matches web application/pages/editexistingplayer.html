@@ -1,0 +1,24 @@
+<html>
+	<head>
+		<title>Toernooi - Speler aanpassen</title>
+		<link rel="stylesheet" href="./css/style.css">
+	</head>
+	<body>
+		<header>
+			<a href="./index.php">Toernooi</a>
+			<a href="./match.php">Schijtsrechter</a>
+			<a href="./player.php">Aanmelden</a>
+		</header>
+		<br>
+		<form action="editplayers.php" method="POST">
+			<input type="hidden" id="id" name="id" value="[id]">
+			<label for="firstname">Voornaam:</label><br>
+			<input type="text" id="firstname" name="firstname" value="[firstname]" required><br>
+			<label for="lastname">Achternaam:</label><br>
+			<input type="text" id="lastname" name="lastname" value="[lastname]" required><br>
+			<label for="school">School naam:</label><br>
+			<input type="text" id="school" name="school" value="[school]" required><br>
+			<input type="submit" name="update" value="aanpassen">
+		</form>
+	<body>
+</html>

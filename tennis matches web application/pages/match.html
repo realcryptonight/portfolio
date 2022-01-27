@@ -1,0 +1,28 @@
+<html>
+	<head>
+		<title>Toernooi - Wedstrijd resultaat</title>
+		<link rel="stylesheet" href="./css/style.css">
+	</head>
+	<body>
+		<header>
+			<a href="./index.php">Toernooi</a>
+			<a href="./match.php">Schijtsrechter</a>
+			<a href="./player.php">Aanmelden</a>
+		</header>
+		<br>
+		<form action="match.php" method="POST">
+			<input type="hidden" id="id" name="id" value="[id]">
+			<label for="winner">Winnaar:</label>
+			<select id="winner" name="winner">
+			  [winnaar1]
+			  [winnaar2]
+			</select><br>
+			<label for="lastname">Score winnaar:</label><br>
+			<input type="number" id="scorewinner" name="scorewinner" value="0" required><br>
+			<label for="school">Score tegenstander:</label><br>
+			<input type="number" id="scoreopponent" name="scoreopponent" value="0" required><br>
+			<input type="submit" name="update" value="Score opslaan">
+		</form>
+		<div class="updateerror"></div>
+	<body>
+</html>
