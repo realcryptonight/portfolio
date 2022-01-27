@@ -8,19 +8,28 @@
 	
 	/*
 	 * Check if an rond has ended. If it has then start a new one.
+	 * @param $tournamentid The id of the tournament.
 	*/
-	function checkForNewRond(){
+	function checkForNewRond($tournamentid){
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
+		// Prevent HTML injection.
+		$safetournamentid = htmlspecialchars($_GET["tournamentid"], ENT_QUOTES);
+		
 		// Get the current rond number from the database.
-		if($result = $conn->query("SELECT `rond` FROM `tournaments` WHERE `id` = 1")){
+		if($stmt = $conn->prepare("SELECT `rond` FROM `tournaments` WHERE `id` = ?")){
+			
+			$stmt->bind_param("s", $tournamentid);
+			$stmt->execute();
+			$result = $stmt->get_result();
 			$rows = resultToArray($result);
-			$result->close();
+			$stmt->close();
 			
 			// Get all the records that match the current rond and do not have a winner.
-			if($stmt = $conn->prepare("SELECT `id` FROM `matches` WHERE `rond` = ? AND `winner` IS NULL")){
-				$stmt->bind_param("s", $rows[0]["rond"]);
+			if($stmt = $conn->prepare("SELECT `id` FROM `matches` WHERE `tournament` = ? AND `rond` = ? AND `winner` IS NULL")){
+				
+				$stmt->bind_param("ss", $tournamentid, $rows[0]["rond"]);
 				$stmt->execute();
 				$result2 = $stmt->get_result();
 				$rows2 = resultToArray($result2);
@@ -34,7 +43,7 @@
 					if($rows[0]["rond"] == 1){
 						
 						// Check if we need to do different logic.
-						if(getFirstRoundInfo()["allplayers"] == "false"){
+						if(getFirstRoundInfo($safetournamentid)["allplayers"] == "false"){
 							
 							// Use different logic since the players cannot be divided by two.
 							
@@ -42,17 +51,24 @@
 							//echo "Not standard!";
 							
 							// Get all the players ids that do not go to the next rond.
-							$excludedplayers = getOpponents($rows);
+							$excludedplayers = getOpponents($tournamentid);
 							
 							// For debug
 							//echo "<pre>";
 							//print_r($excludedplayers);
 							//echo "</pre>";
 							
+							// Put all the excluded players in a stirng for sql query.
+							$excludedplayersasstring = implode("', '", $excludedplayers);
+							
 							// Get all the players that go to the next rond.
-							if($result2 = $conn->query("SELECT `id` FROM `players` WHERE `id` NOT IN ('" . implode("', '", $excludedplayers) . "')")){
+							if($stmt2 = $conn->prepare("SELECT `id` FROM `players` WHERE `tournament_id` = ? AND `id` NOT IN (?)")){
+								
+								$stmt2->bind_param("ss", $tournamentid, $excludedplayersasstring);
+								$stmt2->execute();
+								$result2 = $stmt2->get_result();
 								$nextplayers = resultToArray($result2);
-								$result2->close();
+								$stmt2->close();
 								
 								// For debug
 								//echo "<pre>";
@@ -72,53 +88,71 @@
 								
 								// loop though the array and everytime grab 2 players and put them into a match.
 								for($i = 0; $i <= count($nextplayers) / 2 - 1; $i++){
+									
 									$player1 = $nextplayers[$entrykey];
 									$entrykey++;
 									$player2 = $nextplayers[$entrykey];
 									$entrykey++;
-									createMatch(2, $player1, $player2);
+									createMatch($tournamentid, 2, $player1, $player2);
 								}
 								
 								// Increase the rond by one in the database.
-								updateRond();
+								updateRond($tournamentid);
 							} else {
+								
 								die("Er is iets fout gegaan. Probeer het later nog is. (Error: 1-1)");
 							}
 							
 						} else {
+							
 							// Use standard logic.
-							createNewStandardRond();
+							createNewStandardRond($safetournamentid);
 						}
 					} else {
+						
 						// Use standard logic.
-						createNewStandardRond();
+						createNewStandardRond($safetournamentid);
 					}
 				}
 			}
 		} else {
+			
 			die("Er is iets fout gegaan. Probeer het later nog is. (Error: 1-2)");
 		}
 	}
 	
 	/*
 	 * Increase the rond number of the tournament by one.
+	 * @param $tournamentid The id of the tournament.
 	*/
-	function updateRond(){
+	function updateRond($tournamentid){
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
-		// Get the record(s) of the tournaments.
-		if($result = $conn->query("SELECT `id`, `rond` FROM `tournaments`")){
+		// Get the current rond number from the database.
+		if($stmt = $conn->prepare("SELECT `id`, `rond` FROM `tournaments` WHERE `id` = ?")){
+			
+			$stmt->bind_param("s", $tournamentid);
+			$stmt->execute();
+			$result = $stmt->get_result();
 			$rows = resultToArray($result);
-			$result->close();
+			$stmt->close();
 			
 			// Increase the rond number of the first tournament by one.
 			$newrondnum = $rows[0]["rond"] + 1;
 			
 			// Update the rond number in the database with the new rond number.
-			if(!$conn->query("UPDATE `tournaments` SET `rond`= " . $newrondnum . " WHERE `id` = 1")){
+			if($stmt = $conn->prepare("UPDATE `tournaments` SET `rond`= ? WHERE `id` = ?")){
+				
+				$stmt->bind_param("ss", $newrondnum, $tournamentid);
+				$stmt->execute();
+				$stmt->close();
+			} else {
+				
 				die("Er is iets fout gegaan. Probeer het later nog is. (Error: 2-1)");
 			}
+			
 		} else {
 			die("Er is iets fout gegaan. Probeer het later nog is. (Error: 2-2)");
 		}
@@ -126,23 +160,28 @@
 	
 	/*
 	 * This will get all the opponents who have lost in the first rond.
+	 * @param $tournamentid The id of the tournament.
 	 * @return The ids of the players who have lost in the first rond.
 	*/
-	function getOpponents(){
+	function getOpponents($tournamentid){
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
-		// Get all the records from the first rond that have a winner.
-		if($result = $conn->query("SELECT `id`, `winner`, `player_1`, `player_2` FROM `matches` WHERE `rond` = 1 AND `winner` IS NOT NULL")){
+		if($stmt = $conn->prepare("SELECT `id`, `winner`, `player_1`, `player_2` FROM `matches` WHERE `tournament` = ? AND `rond` = 1 AND `winner` IS NOT NULL")){
+			
+			$stmt->bind_param("s", $tournamentid);
+			$stmt->execute();
+			$result = $stmt->get_result();
 			$rows = resultToArray($result);
-			$result->close();
+			$stmt->close();
 			
 			// Check if we have record(s).
 			if(!empty($rows)){
 				
 				// For debug
 				//echo "<pre>";
-				//print_r($rows2);
+				//print_r($rows);
 				//echo "</pre>";
 				
 				// An array with the player ids that needs to be returned.
@@ -150,14 +189,17 @@
 				
 				// Add the ids of the players who have lost to the excludedplayers array.
 				for($i = 0; $i <= count($rows) - 1; $i++){
+					
 					// Check if the first player is the winner.
 					if($rows[$i]["winner"] == $rows[$i]["player_1"]){
+						
 						// For debug
 						//echo $rows[$i]["player_2"];
 						
 						// Since player 1 won we know that player 2 lost and thus needs to be added to the excludedplayers array.
 						$excudeids[] = $rows[$i]["player_2"];
 					} else {
+						
 						// For debug
 						//echo $rows[$i]["player_1"];
 						
@@ -165,12 +207,15 @@
 						$excudeids[] = $rows[$i]["player_1"];
 					}
 				}
+				
 				// Return the result.
 				return $excudeids;
 			} else {
+				
 				die("Er is iets fout gegaan. Probeer het later nog is. (Error: 3-1)");
 			}
 		} else {
+			
 			die("Er is iets fout gegaan. Probeer het later nog is. (Error: 3-2)");
 		}
 	}
@@ -178,8 +223,10 @@
 	/*
 	 * Create a new rond by getting all the winners from
 	 * the previous rond and put them into a new rond.
+	 * @param $tournamentid The id of the tournament.
 	*/
-	function createNewStandardRond(){
+	function createNewStandardRond($tournamentid){
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
@@ -187,19 +234,26 @@
 		//echo "Standard!";
 		
 		// Get the current rond number.
-		if($result = $conn->query("SELECT `rond` FROM `tournaments` WHERE `id` = 1")){
+		if($stmt = $conn->prepare("SELECT `rond` FROM `tournaments` WHERE `id` = ?")){
+			
+			$stmt->bind_param("s", $tournamentid);
+			$stmt->execute();
+			$result = $stmt->get_result();
 			$currentrond = resultToArray($result)[0]["rond"];
 			$rond = $currentrond + 1;
-			$result->close();
+			$stmt->close();
 			
 			// If currentrond is null then there is no tournament.
 			if($currentrond != null) {
 				
-				// The rond is an number (and can only be an number) and thus no risk for sql injection.
 				// Get all the winner ids of the current rond.
-				if($result2 = $conn->query("SELECT `winner` AS `id` FROM `matches` WHERE `rond` = " . $currentrond)){
+				if($stmt = $conn->prepare("SELECT `winner` AS `id` FROM `matches` WHERE `tournament` = ? AND `rond` = ?")){
+					
+					$stmt->bind_param("ss", $tournamentid, $currentrond);
+					$stmt->execute();
+					$result2 = $stmt->get_result();
 					$nextplayers = resultToArray($result2);
-					$result2->close();
+					$stmt->close();
 					
 					// For debug
 					//echo "<pre>";
@@ -214,22 +268,27 @@
 						
 						// loop though the array and everytime grab 2 players and put them into a match.
 						for($i = 0; $i <= count($nextplayers) / 2 - 1; $i++){
+							
 							$player1 = $nextplayers[$entrykey];
 							$entrykey++;
 							$player2 = $nextplayers[$entrykey];
 							$entrykey++;
-							createMatch($rond, $player1, $player2);
+							createMatch($tournamentid, $rond, $player1, $player2);
 						}
+						
 						// Increase the rond by one in the database.
-						updateRond();
+						updateRond($tournamentid);
 					}
 				} else {
+					
 					die("Er is iets fout gegaan. Probeer het later nog is. (Error: 4-1)");
 				}
 			} else {
+				
 				die("Er is iets fout gegaan. Probeer het later nog is. (Error: 4-2)");
 			}
 		} else {
+			
 			die("Er is iets fout gegaan. Probeer het later nog is. (Error: 4-3)");
 		}
 	}

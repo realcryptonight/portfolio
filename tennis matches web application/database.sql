@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Gegenereerd op: 14 jan 2022 om 12:23
+-- Gegenereerd op: 25 jan 2022 om 10:48
 -- Serverversie: 10.4.22-MariaDB
 -- PHP-versie: 7.4.27
 
@@ -48,7 +48,8 @@ CREATE TABLE `players` (
   `id` int(11) NOT NULL,
   `firstname` varchar(50) NOT NULL,
   `lastname` varchar(50) NOT NULL,
-  `school` varchar(50) NOT NULL
+  `school` varchar(50) NOT NULL,
+  `tournament_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -59,12 +60,10 @@ CREATE TABLE `players` (
 
 CREATE TABLE `tournaments` (
   `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `rond` int(2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Indexen voor geëxporteerde tabellen
---
 
 --
 -- Indexen voor tabel `matches`

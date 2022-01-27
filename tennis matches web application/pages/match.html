@@ -5,22 +5,30 @@
 	</head>
 	<body>
 		<header>
-			<a href="./index.php">Toernooi</a>
-			<a href="./match.php">Schijtsrechter</a>
-			<a href="./player.php">Aanmelden</a>
+			<!-- Changed for ticket: 3 -->
+			<a href="./index.php">Hoofdpagina</a>
+			<a href="./tournamentview.php?tournamentid=[tournamentid]">Toernooi</a>
+			<a href="./match.php?tournamentid=[tournamentid]">Schijtsrechter</a>
+			<a href="./player.php?tournamentid=[tournamentid]">Aanmelden</a>
 		</header>
 		<br>
-		<form action="match.php" method="POST">
+		<form action="match.php?tournamentid=[tournamentid]" method="POST">
 			<input type="hidden" id="id" name="id" value="[id]">
-			<label for="winner">Winnaar:</label>
+			<!-- Added for ticket: 1 & 2 -->
+			<input type="hidden" id="one" name="oneid" value="[oneid]">
+			<input type="hidden" id="two" name="twoid" value="[twoid]">
+			<label for="scoreone">Score [winnaar1]:</label><br>
+			<!-- Changed for ticket: 1 & 2 -->
+			<input type="number" id="scoreone" name="scoreone" value="0" min="0" required><br>
+			<label for="scoretwo">Score [winnaar2]:</label><br>
+			<!-- Changed for ticket: 1 & 2 -->
+			<input type="number" id="scoretwo" name="scoretwo" value="0" min="0" required><br>
+			<label for="winner">Winnaar bij gelijkspel:</label><br>
 			<select id="winner" name="winner">
-			  [winnaar1]
-			  [winnaar2]
+				<option disabled selected></option>
+				[optionone]
+				[optiontwo]
 			</select><br>
-			<label for="lastname">Score winnaar:</label><br>
-			<input type="number" id="scorewinner" name="scorewinner" value="0" required><br>
-			<label for="school">Score tegenstander:</label><br>
-			<input type="number" id="scoreopponent" name="scoreopponent" value="0" required><br>
 			<input type="submit" name="update" value="Score opslaan">
 		</form>
 		<div class="updateerror"></div>
