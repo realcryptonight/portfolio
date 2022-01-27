@@ -4,16 +4,25 @@
 	
 	/*
 	 * Get all the players that are in the player table.
+	 * @param $tournamentid The id of the tournament.
 	 * @return An array with all the players from the players table.
 	*/
-	function getAllPlayers(){
+	function getAllPlayers($tournamentid){
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
+		// Prevent HTML injection.
+		$safetournamentid = htmlspecialchars($tournamentid, ENT_QUOTES);
+		
 		// Get all the records that are in the players table.
-		if($result = $conn->query("SELECT `id`, `firstname`, `lastname`, `school` FROM `players`")){
+		if($stmt = $conn->prepare("SELECT `id`, `firstname`, `lastname`, `school` FROM `players` WHERE `tournament_id` = ?")){
+			
+			$stmt->bind_param("s", $safetournamentid);
+			$stmt->execute();
+			$result = $stmt->get_result();
 			$rows = resultToArray($result);
-			$result->close();
+			$stmt->close();
 			
 			// Return all the players from the players table.
 			return $rows;
@@ -36,6 +45,7 @@
 		
 		// Get the record that belongs to the specified player.
 		if($stmt = $conn->prepare("SELECT `id`, `firstname`, `lastname`, `school` FROM `players` WHERE `id` = ?")){
+			
 			$stmt->bind_param("s", $safeplayerid);
 			$stmt->execute();
 			
@@ -46,11 +56,14 @@
 			
 			// Check if the mysqlid is not null. Since that would mean no records found.
 			if($mysqlid != null){
+				
 				return array("success" => "true", "data" => array("id" => $mysqlid, "firstname" => $mysqlfirstname, "lastname" => $mysqllastname, "school" => $mysqlschool));
 			} else {
+				
 				return array("success" => "false");
 			}
 		} else {
+			
 			return array("success" => "false");
 		}
 	}
@@ -64,6 +77,7 @@
 	 * @return true if the update was successfull. | false if the update failed.
 	*/
 	function updatePlayer() {
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
@@ -75,6 +89,7 @@
 		
 		// Update the player with the new information.
 		if($stmt = $conn->prepare("UPDATE `players` SET `id`= ?,`firstname`= ?,`lastname`= ?,`school`=? WHERE `id` = ?")){
+			
 			$stmt->bind_param("sssss", $safeplayerid, $safefirstname, $safelastname, $safeschool, $safeplayerid);
 			$stmt->execute();
 			$stmt->close();
@@ -82,6 +97,7 @@
 			// Return true. Meaning success.
 			return true;
 		} else {
+			
 			// Return false. Meaning failure.
 			return false;
 		}
@@ -89,9 +105,11 @@
 	
 	/*
 	 * Delete a player from the players table.
+	 * @param $playerid The id of the player.
 	 * @return true if player is delete if it was possible. | false if the player deletion failed.
 	*/
 	function deletePlayer($playerid) {
+		
 		// Make the connection variable accessible in this function.
 		global $conn;
 		
@@ -100,12 +118,14 @@
 		
 		// Delete the given user from the player table if possible.
 		if($stmt = $conn->prepare("DELETE FROM `players` WHERE `id` = ?")){
+			
 			$stmt->bind_param("s", $safeplayerid);
 			$stmt->execute();
 			
 			// Return true. Meaning success.
 			return true;
 		} else {
+			
 			// Return false. Meaning failure.
 			return false;
 		}
