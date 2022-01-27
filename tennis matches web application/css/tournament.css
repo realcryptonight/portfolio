@@ -1,0 +1,36 @@
+.central {
+	width: 225px;
+	float: left;
+}
+
+.central p {
+	text-align: center;
+	background-color: #cccccc;
+}
+
+.player {
+	background: #cccccc;
+	margin-left: 10px;
+	text-align: center;
+}
+
+.lost {
+	background-color: red !important
+}
+
+.winner {
+	background-color: chartreuse !important
+}
+
+.lost p {
+	background-color: red !important
+}
+
+.winner p {
+	background-color: chartreuse !important
+}
+
+a {
+	text-decoration: none !important;
+	color: blue;
+}

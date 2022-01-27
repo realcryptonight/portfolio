@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<title>Toernooi - Speler(s) toevoegen</title>
+		<link rel="stylesheet" href="./css/style.css">
+		<link rel="stylesheet" href="./css/editplayers.css">
+	</head>
+	<body>
+		<header>
+			<a href="./index.php">Toernooi</a>
+			<a href="./match.php">Schijtsrechter</a>
+			<a href="./player.php">Aanmelden</a>
+		</header>
+		<br>
+		<form action="player.php" method="POST">
+			<label for="firstname">Voornaam:</label><br>
+			<input type="text" id="firstname" name="firstname" required><br>
+			<label for="lastname">Achternaam:</label><br>
+			<input type="text" id="lastname" name="lastname" required><br>
+			<label for="school">School naam:</label><br>
+			<input type="text" id="school" name="school" required><br>
+			<input type="submit" name="register" value="aanmelden">
+		</form>
+		<div class="registererror"></div>
+		<br>
+		<form action="player.php" method="POST" enctype="multipart/form-data">
+			<label for="fileupload">Spelers bestand:</label><br>
+			<input type="file" id="files" name="files[]" multiple><br>
+			<input type="submit" name="upload" value="uploaden">
+		</form>
+		<div class="uploaderror"></div>
+		<a href="./editplayers.php">Spelers bewerken</a>
+	<body>
+</html>

@@ -1,0 +1,9 @@
+a {
+	text-decoration: none !important;
+	color: blue;
+}
+
+td, th {
+	width: 175px;
+	text-align: center;
+}
